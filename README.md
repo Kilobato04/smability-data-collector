@@ -22,3 +22,8 @@ Microservicio core del ecosistema **Smability**. Esta función AWS Lambda es res
 2. Instala las dependencias (Esto generará tu `package-lock.json` automáticamente):
    ```bash
    npm install
+
+## 🚀 Instalación CloudShell
+cd smability-data-collector
+git pull origin main
+./deploy.sh
