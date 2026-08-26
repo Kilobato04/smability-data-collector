@@ -17,7 +17,7 @@ zip -r function.zip . -x "*.git*" -x "deploy.sh" -x "README.md" -x ".gitignore"
 
 echo "4️⃣ Actualizando función en AWS Lambda..."
 aws lambda update-function-code \
-    --function-name smabilitydatacollector \
+    --function-name SmabilityDataCollector \
     --zip-file fileb://function.zip \
     --no-cli-pager
 
