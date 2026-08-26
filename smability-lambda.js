@@ -539,7 +539,7 @@ async function fetchNewStationHourlyData(connection, stationId, city, placement)
       const hourlyData = {
         pm25: record.pm25_avg !== undefined ? record.pm25_avg : null,
         pm10: record.pm10_avg !== undefined ? record.pm10_avg : null,
-        o3: record.o3_avg !== undefined ? record.o3_avg : null,
+        o3: record.o3_avg !== undefined ? record.o3_avg : null, // El o3_avg ya viene en el JSON de la API custom
         co: record.co_avg !== undefined ? record.co_avg : null,
         tmp: record.temperature_avg !== undefined ? record.temperature_avg : null,
         rh: record.humidity_avg !== undefined ? record.humidity_avg : null
@@ -555,13 +555,6 @@ async function fetchNewStationHourlyData(connection, stationId, city, placement)
         placement, 
         hourlyData
       );
-      try {
-        console.log(`Recalculando pesos e índices para ${stationId} en hora ${readingHour}`);
-        await weightCalculator.calculateHourlyAverages(connection, readingDate, readingHour);
-        await weightCalculator.calculateAndStoreWeightedValues(connection, readingDate, readingHour);
-      } catch (calcError) {
-        console.error(`⚠️ Error recalculando pesos para ${stationId}:`, calcError.message);
-      }
     }
     console.log(`✅ Sincronización API Custom exitosa: ${stationId}`);
   } catch (error) {
