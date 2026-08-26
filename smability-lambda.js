@@ -528,7 +528,7 @@ exports.handler = async (event) => {
  */
 async function fetchNewStationHourlyData(connection, stationId, city, placement) {
   try {
-    const apiUrl = `https://jciiy1ok97.execute-api.us-east-1.amazonaws.com/default/getData?action=hourly_history&deviceID=${stationId}&days=40`;
+    const apiUrl = `https://jciiy1ok97.execute-api.us-east-1.amazonaws.com/default/getData?action=hourly_history&deviceID=${stationId}&days=1`;
     
     console.log(`📡 Consultando API custom para: ${stationId}`);
     const response = await axios.get(apiUrl, { timeout: 30000 });
