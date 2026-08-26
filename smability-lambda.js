@@ -370,25 +370,39 @@ exports.handler = async (event) => {
           try {
             bioBoxResults.processed++;
             
-            // Fetch data from BioBox API
-            const bioBoxData = await fetchBioBoxHourlyData(connection, device.token);
-            
-            // Process and store the BioBox data
-            const storeResult = await processBioBoxData(
-              connection, 
-              device.station_id, 
-              device.city, 
-              device.placement,
-              bioBoxData
-            );
-            
-            bioBoxResults.success++;
-            bioBoxResults.devices.push({
-              station_id: device.station_id,
-              name: device.station_name,
-              status: 'success',
-              parameters: storeResult.parameters
-            });
+            // 🚀 BIFURCACIÓN: ¿Es un dispositivo con endpoint propio o BioBox?
+            if (device.token && device.token.includes('CUSTOM_ENDPOINT')) {
+              console.log(`⚡ Ruta nueva detectada para estación: ${device.station_id}`);
+              await fetchNewStationHourlyData(connection, device.station_id, device.city, device.placement);
+              
+              bioBoxResults.success++;
+              bioBoxResults.devices.push({
+                station_id: device.station_id,
+                name: device.station_name,
+                status: 'success',
+                parameters: ['pm25', 'pm10', 'o3', 'co', 'tmp', 'rh'] // Asumimos éxito completo
+              });
+            } else {
+              // 🐢 Ruta tradicional: BioBox API
+              const bioBoxData = await fetchBioBoxHourlyData(connection, device.token);
+              
+              // Process and store the BioBox data
+              const storeResult = await processBioBoxData(
+                connection, 
+                device.station_id, 
+                device.city, 
+                device.placement,
+                bioBoxData
+              );
+              
+              bioBoxResults.success++;
+              bioBoxResults.devices.push({
+                station_id: device.station_id,
+                name: device.station_name,
+                status: 'success',
+                parameters: storeResult.parameters
+              });
+            }
           } catch (deviceError) {
             console.error(`Error processing device ${device.station_id}:`, deviceError);
             bioBoxResults.errors++;
@@ -509,6 +523,61 @@ exports.handler = async (event) => {
   }
 };
 
+/**
+ * 🚀 Ingesta datos del nuevo endpoint basado en deviceID (SMAA_003, SMAA_004, etc)
+ */
+async function fetchNewStationHourlyData(connection, stationId, city, placement) {
+  try {
+    const apiUrl = `https://jciiy1ok97.execute-api.us-east-1.amazonaws.com/default/getData?action=hourly_history&deviceID=${stationId}&days=40`;
+    
+    console.log(`📡 Consultando API custom para: ${stationId}`);
+    const response = await axios.get(apiUrl, { timeout: 30000 });
+
+    if (!response.data || !Array.isArray(response.data.data)) {
+      console.warn(`⚠️ Sin datos en la respuesta para ${stationId}`);
+      return;
+    }
+
+    const records = response.data.data;
+    console.log(`📊 Procesando ${records.length} registros para ${stationId}`);
+
+    for (const record of records) {
+      if (!record.hour_timestamp_utc) continue;
+
+      // Conversión de UTC a UTC-6 (CDMX)
+      const dateUtc = new Date(record.hour_timestamp_utc * 1000);
+      const dateLocal = new Date(dateUtc.getTime() - (6 * 60 * 60 * 1000));
+      
+      const readingDate = dateLocal.toISOString().split('T')[0];
+      const readingHour = dateLocal.getHours();
+
+      // Mapeo ignorando métricas que la BD no soporta
+      const hourlyData = {
+        pm25: record.pm25_avg !== undefined ? record.pm25_avg : null,
+        pm10: record.pm10_avg !== undefined ? record.pm10_avg : null,
+        o3: record.o3_avg !== undefined ? record.o3_avg : null,
+        co: record.co_avg !== undefined ? record.co_avg : null,
+        tmp: record.temperature_avg !== undefined ? record.temperature_avg : null,
+        rh: record.humidity_avg !== undefined ? record.humidity_avg : null
+      };
+
+      // Usamos tu misma función core de guardado (storeWithCorrectFieldMapping)
+      await storeWithCorrectFieldMapping(
+        connection, 
+        stationId, 
+        readingDate, 
+        readingHour, 
+        city, 
+        placement, 
+        hourlyData
+      );
+    }
+    console.log(`✅ Sincronización API Custom exitosa: ${stationId}`);
+  } catch (error) {
+    console.error(`❌ Error en fetchNewStationHourlyData (${stationId}): ${error.message}`);
+    throw error; // Propagamos el error para que bioBoxResults lo cachee como "error"
+  }
+}
 // Updated version with proper token validation
 async function fetchBioBoxHourlyData(connection, tokenId) {
   try {
