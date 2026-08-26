@@ -1,0 +1,14 @@
+{
+  "name": "smability-data-collector",
+  "version": "1.0.0",
+  "description": "Lambda colectora de datos para sensores Smability y cálculo de IAS",
+  "main": "smability-lambda.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "axios": "^1.0.0",
+    "mysql2": "^3.0.0"
+  }
+}
