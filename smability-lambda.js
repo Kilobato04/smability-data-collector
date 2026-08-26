@@ -916,6 +916,9 @@ async function storeReadingsForAPI(connection, stationId, date, hour, city, plac
   const localHour = (hour - 6 + 24) % 24; // Calculate Mexico City local hour
   
   for (const [parameter, value] of Object.entries(hourlyData)) {
+    
+    if (parameter === 'co_8hr') continue;
+    
     if (value !== null && value !== undefined) {
       try {
         // Format the value as a string for raw_value
