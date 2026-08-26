@@ -24,6 +24,7 @@ Microservicio core del ecosistema **Smability**. Esta función AWS Lambda es res
    npm install
 
 ## 🚀 Instalación CloudShell
+```bash
 cd smability-data-collector
 git pull origin main
 ./deploy.sh
