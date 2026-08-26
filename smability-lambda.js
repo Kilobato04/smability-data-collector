@@ -555,6 +555,13 @@ async function fetchNewStationHourlyData(connection, stationId, city, placement)
         placement, 
         hourlyData
       );
+      try {
+        console.log(`Recalculando pesos e índices para ${stationId} en hora ${readingHour}`);
+        await weightCalculator.calculateHourlyAverages(connection, readingDate, readingHour);
+        await weightCalculator.calculateAndStoreWeightedValues(connection, readingDate, readingHour);
+      } catch (calcError) {
+        console.error(`⚠️ Error recalculando pesos para ${stationId}:`, calcError.message);
+      }
     }
     console.log(`✅ Sincronización API Custom exitosa: ${stationId}`);
   } catch (error) {
