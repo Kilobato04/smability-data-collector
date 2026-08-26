@@ -370,7 +370,7 @@ exports.handler = async (event) => {
           try {
             bioBoxResults.processed++;
             
-            // 🚀 BIFURCACIÓN: ¿Es un dispositivo con endpoint propio o BioBox?
+            // 🚀 BIFURCACIÓN: ¿Es un dispositivo con endpoint propio?
             if (device.token && device.token.includes('CUSTOM_ENDPOINT')) {
               console.log(`⚡ Ruta nueva detectada para estación: ${device.station_id}`);
               await fetchNewStationHourlyData(connection, device.station_id, device.city, device.placement);
@@ -380,28 +380,12 @@ exports.handler = async (event) => {
                 station_id: device.station_id,
                 name: device.station_name,
                 status: 'success',
-                parameters: ['pm25', 'pm10', 'o3', 'co', 'tmp', 'rh'] // Asumimos éxito completo
+                parameters: ['pm25', 'pm10', 'o3', 'co', 'tmp', 'rh']
               });
             } else {
-              // 🐢 Ruta tradicional: BioBox API
-              const bioBoxData = await fetchBioBoxHourlyData(connection, device.token);
-              
-              // Process and store the BioBox data
-              const storeResult = await processBioBoxData(
-                connection, 
-                device.station_id, 
-                device.city, 
-                device.placement,
-                bioBoxData
-              );
-              
-              bioBoxResults.success++;
-              bioBoxResults.devices.push({
-                station_id: device.station_id,
-                name: device.station_name,
-                status: 'success',
-                parameters: storeResult.parameters
-              });
+              // 🪓 AMPUTACIÓN DE BIOBOX: Ya NO llamamos a fetchBioBoxHourlyData
+              console.log(`🛑 API Legacy amputada. Ignorando estación zombi: ${device.station_id}`);
+              bioBoxResults.success++; // Lo marcamos como éxito simulado para evitar errores
             }
           } catch (deviceError) {
             console.error(`Error processing device ${device.station_id}:`, deviceError);
