@@ -557,8 +557,8 @@ async function fetchNewStationHourlyData(connection, stationId, city, placement)
       const hourlyData = {
         pm25: record.pm25_avg !== undefined ? record.pm25_avg : null,
         pm10: record.pm10_avg !== undefined ? record.pm10_avg : null,
-        o3: record.o3_avg !== undefined ? record.o3_avg : null,
-        co: record.co_avg !== undefined ? (record.co_avg / 1000) : null, // 🛡️ Conversión a ppm
+        o3: record.o3_avg !== undefined ? record.o3_avg : null, // El o3_avg ya viene en el JSON de la API custom
+        co: record.co_avg !== undefined ? record.co_avg : null,
         tmp: record.temperature_avg !== undefined ? record.temperature_avg : null,
         rh: record.humidity_avg !== undefined ? record.humidity_avg : null
       };
@@ -658,15 +658,12 @@ async function fetchBioBoxHourlyData(connection, tokenId) {
     console.log(`Processing BioBox data for date: ${formattedDate}, hour: ${hour}`);
     
     // Parse hourly values
-    const rawCo = parseFloatFromString(response.data.CO_1hr);
-    const rawCo8hr = parseFloatFromStringWithUnits(response.data.ConcentrationIASCO_8hr);
-    
     const hourlyData = {
       pm25: parseFloatFromString(response.data.PM2_5_1hr),
       pm10: parseFloatFromString(response.data.PM10_1hr),
       o3: parseFloatFromString(response.data.O3_1hr),
-      co: rawCo !== null ? (rawCo / 1000) : null,          // 🛡️ Conversión a ppm
-      co_8hr: rawCo8hr !== null ? (rawCo8hr / 1000) : null, // 🛡️ Conversión a ppm
+      co: parseFloatFromString(response.data.CO_1hr),
+      co_8hr: parseFloatFromStringWithUnits(response.data.ConcentrationIASCO_8hr),
       tmp: parseFloatFromString(response.data.Temp_1hr),
       rh: parseFloatFromString(response.data.HR_1hr)
     };
@@ -1840,14 +1837,7 @@ function transformSensorDataToReadings(device, sensor, sensorData) {
     const sensorDescription = SENSOR_ID_MAP[sensor.idSensor] || sensor.description;
     const parameterId = PARAMETER_MAPPING[sensorDescription] || null;
     
-    #--
     if (parameterId) {
-      let finalValue = parseFloat(dataPoint.value);
-    
-      // 🛡️ Ajuste Táctico CO: Convertir de ppb a ppm (dividiendo entre 1000) para almacenamiento y reporte
-      if (parameterId === 'co') {
-        finalValue = finalValue / 1000;
-      }
       readings.push({
         // Use station_id instead of name
         station_id: device.station_id || device.name, // Fallback to name for backward compatibility
