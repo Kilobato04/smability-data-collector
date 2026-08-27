@@ -415,6 +415,19 @@ exports.handler = async (event) => {
           await weightCalculator.calculateHourlyAverages(connection, currentDate, currentHour);
           await weightCalculator.calculateAndStoreWeightedValues(connection, currentDate, currentHour);
           console.log("Successfully calculated weighted values from hourly data");
+
+          console.log("🛡️ Restaurando o3_value global para estaciones custom desde lecturas crudas...");
+          await connection.execute(`
+            UPDATE air_quality_index aqi
+            JOIN readings r ON aqi.station_id = r.station_id 
+               AND aqi.reading_date = r.reading_date 
+               AND aqi.reading_hour = r.reading_hour
+            SET aqi.o3_value = r.value
+            WHERE r.parameter_id = 'o3' 
+            AND r.device_source = 'smability'
+            AND aqi.reading_date = ? AND aqi.reading_hour = ?
+          `, [currentDate, currentHour]);
+          console.log("✅ o3_value blindado y restaurado en el índice para toda la red.");
           
           // Optional debug verification
           try {
