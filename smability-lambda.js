@@ -541,8 +541,13 @@ async function fetchNewStationHourlyData(connection, stationId, city, placement)
     for (const record of records) {
       if (!record.hour_timestamp_utc) continue;
 
-      // Conversión de UTC a UTC-6 (CDMX)
+      // Construimos la fecha original UTC del sensor
       const dateUtc = new Date(record.hour_timestamp_utc * 1000);
+      
+      // 👇 AJUSTE DE INTERVALO: Sumamos +1 hora (3,600,000 ms) para alinear al cierre
+      dateUtc.setTime(dateUtc.getTime() + (60 * 60 * 1000));
+      
+      // Conversión a la zona horaria local de CDMX (UTC-6)
       const dateLocal = new Date(dateUtc.getTime() - (6 * 60 * 60 * 1000));
       
       const readingDate = dateLocal.toISOString().split('T')[0];
